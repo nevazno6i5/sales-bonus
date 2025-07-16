@@ -57,7 +57,13 @@ function analyzeSalesData(data, options) {
     throw new Error('Опции должны содержать функции calculateRevenue и calculateBonus');
 }
     // @TODO: Подготовка промежуточных данных для сбора статистики
-    const sellerStats = data.sellers.map(seller =>({
+    const sellerStats = data.sellers.map(seller =>{
+        if (!seller.id || !seller.first_name || !seller.last_name) {
+        console.error('Некорректные данные продавца:', seller);
+        throw new Error('Данные продавца должны содержать id, first_name и last_name');
+    }
+
+    return {
         seller_id: seller.id,
         name: `${seller.first_name} ${seller.last_name}`,
         revenue: 0,
@@ -66,7 +72,8 @@ function analyzeSalesData(data, options) {
         products_sold: {},
         top_products: {},   
         bonus: 0
-    }));
+    }
+    });
 
     // @TODO: Индексация продавцов и товаров для быстрого доступа
     const sellerIndex = Object.fromEntries(data.sellers.map(seller  => [seller.id, seller]));
@@ -88,6 +95,8 @@ function analyzeSalesData(data, options) {
         sellerStat.sales_count += 1;
         sellerStat.revenue += record.total_amount;
 
+        let totalCost = 0;
+
         record.items.forEach(item => {
             const product = productIndex[item.sku];
             if (!product) {
@@ -95,12 +104,16 @@ function analyzeSalesData(data, options) {
                 return;
             } 
 
-            const cost = product.purchase_price * (item.quantity || 1);
-            const revenue = options.calculateRevenue(item, product);
-            const profit = revenue - cost;
-
-            sellerStat.profit += profit;
+            const quantity = item.quantity || 1;
+            const cost = product.purchase_price * quantity;
             totalCost += cost;
+
+             const revenue = options.calculateRevenue(item, product);
+            sellerStat.profit += (revenue - cost);
+
+            if (!seller.products_sold) {
+            seller.products_sold = {};
+}
 
             if (!seller.products_sold[item.sku]) {
                 seller.products_sold[item.sku] = 0;
@@ -130,6 +143,7 @@ function analyzeSalesData(data, options) {
     }));
 
     // @TODO: Назначение премий на основе ранжирования
+    
 
 
     // @TODO: Подготовка итоговой коллекции с нужными полями
