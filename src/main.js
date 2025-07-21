@@ -7,9 +7,7 @@
 function calculateSimpleRevenue(purchase, _product) {
    // @TODO: Расчет прибыли от операции
     const discount = 1 - (purchase.discount / 100);
-    const revenue = _product.sale_price * (purchase.quantity || 1) * discount;
-    const cost = _product.purchase_price * (purchase.quantity || 1);
-    return revenue - cost;
+    return _product.sale_price * (purchase.quantity || 1) * discount;
 }
 
 /**
@@ -27,10 +25,7 @@ function calculateBonusByProfit(index, total, seller) {
     else if(index ===1 || index ===2) {
         return 0.10;
     }
-    else if (index === total - 2) {
-        return 0;
-    }
-    else if(index === total - 1) {
+    else if (index === total - 1) {
         return 0;
     }
     else {
@@ -62,20 +57,22 @@ function analyzeSalesData(data, options) {
     throw new Error('Опции должны содержать функции calculateRevenue и calculateBonus');
 }
     // @TODO: Подготовка промежуточных данных для сбора статистики
-     const sellerStats = data.sellers.map(seller => {
+    const sellerStats = data.sellers.map(seller =>{
         if (!seller.id || !seller.first_name || !seller.last_name) {
-            throw new Error('Данные продавца должны содержать id, first_name и last_name');
-        }
+        console.error('Некорректные данные продавца:', seller);
+        throw new Error('Данные продавца должны содержать id, first_name и last_name');
+    }
 
-        return {
-            seller_id: seller.id,
-            name: `${seller.first_name} ${seller.last_name}`,
-            revenue: 0,
-            profit: 0,
-            sales_count: 0,
-            products_sold: {}, 
-            bonus: 0
-        };
+    return {
+        seller_id: seller.id,
+        name: `${seller.first_name} ${seller.last_name}`,
+        revenue: 0,
+        profit: 0,
+        sales_count: 0,
+        products_sold: {},
+        top_products: {},   
+        bonus: 0
+    }
     });
 
     // @TODO: Индексация продавцов и товаров для быстрого доступа
@@ -111,33 +108,34 @@ function analyzeSalesData(data, options) {
             const cost = product.purchase_price * quantity;
             totalCost += cost;
 
-             const revenue = options.calculateRevenue(item, product);
+            const revenue = options.calculateRevenue(item, product);
             sellerStat.profit += (revenue - cost);
 
             if (!seller.products_sold) {
             seller.products_sold = {};
 }
 
-             if (!sellerStat.products_sold[item.sku]) {
-                sellerStat.products_sold[item.sku] = 0;
+            if (!seller.products_sold[item.sku]) {
+                seller.products_sold[item.sku] = 0;
             }
-            sellerStat.products_sold[item.sku] += quantity;
-        });
-
-            sellerStat.profit += (record.total_amount - totalCost);
+            seller.products_sold[item.sku] += item.quantity;
     });
-};
+});
 
     // @TODO: Сортировка продавцов по прибыли
     sellerStats.sort((a, b) => b.profit - a.profit);
 
-    sellerStats.forEach((sellerStat, index) => {
-        sellerStat.bonus = options.calculateBonus(index, sellerStats.length, sellerStat);
-        
-        sellerStat.top_products = Object.entries(sellerStat.products_sold)
-            .map(([sku, quantity]) => ({ sku, quantity }))
-            .sort((a, b) => b.quantity - a.quantity)
-            .slice(0, 10);
+    sellerStats.forEach((stat, index) => {
+        stat.bonus = options.calculateBonus(index, sellerStats.length, stat);
+        stat.top_products = Object.entries(stat.products_sold || {})
+        .map(([sku, quantity]) => ({ sku, quantity }))
+        .sort((a, b) => b.quantity - a.quantity)
+        .slice(0, 10);
+    });
+
+    console.log("Проверка сортировки после расчета бонусов:");
+    sellerStats.forEach((stat, index) => {
+        console.log(`${index}: ${stat.name} - Profit: ${stat.profit}`);
     });
 
     return sellerStats.map(seller => ({
@@ -150,9 +148,9 @@ function analyzeSalesData(data, options) {
         bonus: +seller.bonus.toFixed(2)
     }));
 
-
     // @TODO: Назначение премий на основе ранжирования
     
 
 
     // @TODO: Подготовка итоговой коллекции с нужными полями
+}
