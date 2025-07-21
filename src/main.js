@@ -7,7 +7,9 @@
 function calculateSimpleRevenue(purchase, _product) {
    // @TODO: Расчет прибыли от операции
     const discount = 1 - (purchase.discount / 100);
-    return _product.sale_price * (purchase.quantity || 1) * discount;
+    const revenue = _product.sale_price * (purchase.quantity || 1) * discount;
+    const cost = _product.purchase_price * (purchase.quantity || 1);
+    return revenue - cost;
 }
 
 /**
@@ -25,7 +27,10 @@ function calculateBonusByProfit(index, total, seller) {
     else if(index ===1 || index ===2) {
         return 0.10;
     }
-    else if (index === total - 1) {
+    else if (index === total - 2) {
+        return 0;
+    }
+    else if(index === total - 1) {
         return 0;
     }
     else {
@@ -57,22 +62,20 @@ function analyzeSalesData(data, options) {
     throw new Error('Опции должны содержать функции calculateRevenue и calculateBonus');
 }
     // @TODO: Подготовка промежуточных данных для сбора статистики
-    const sellerStats = data.sellers.map(seller =>{
+     const sellerStats = data.sellers.map(seller => {
         if (!seller.id || !seller.first_name || !seller.last_name) {
-        console.error('Некорректные данные продавца:', seller);
-        throw new Error('Данные продавца должны содержать id, first_name и last_name');
-    }
+            throw new Error('Данные продавца должны содержать id, first_name и last_name');
+        }
 
-    return {
-        seller_id: seller.id,
-        name: `${seller.first_name} ${seller.last_name}`,
-        revenue: 0,
-        profit: 0,
-        sales_count: 0,
-        products_sold: {},
-        top_products: {},   
-        bonus: 0
-    }
+        return {
+            seller_id: seller.id,
+            name: `${seller.first_name} ${seller.last_name}`,
+            revenue: 0,
+            profit: 0,
+            sales_count: 0,
+            products_sold: {}, 
+            bonus: 0
+        };
     });
 
     // @TODO: Индексация продавцов и товаров для быстрого доступа
@@ -115,21 +118,26 @@ function analyzeSalesData(data, options) {
             seller.products_sold = {};
 }
 
-            if (!seller.products_sold[item.sku]) {
-                seller.products_sold[item.sku] = 0;
+             if (!sellerStat.products_sold[item.sku]) {
+                sellerStat.products_sold[item.sku] = 0;
             }
-            seller.products_sold[item.sku] += (item.quantity || 1);
+            sellerStat.products_sold[item.sku] += quantity;
+        });
+
+            sellerStat.profit += (record.total_amount - totalCost);
     });
-});
+};
 
     // @TODO: Сортировка продавцов по прибыли
     sellerStats.sort((a, b) => b.profit - a.profit);
 
-    sellerStats.forEach(sellerStat => {
-    sellerStat.top_products = Object.entries(sellerStat.products_sold || {})
-        .map(([sku, quantity]) => ({ sku, quantity }))
-        .sort((a, b) => b.quantity - a.quantity)
-        .slice(0, 10);
+    sellerStats.forEach((sellerStat, index) => {
+        sellerStat.bonus = options.calculateBonus(index, sellerStats.length, sellerStat);
+        
+        sellerStat.top_products = Object.entries(sellerStat.products_sold)
+            .map(([sku, quantity]) => ({ sku, quantity }))
+            .sort((a, b) => b.quantity - a.quantity)
+            .slice(0, 10);
     });
 
     return sellerStats.map(seller => ({
@@ -142,9 +150,9 @@ function analyzeSalesData(data, options) {
         bonus: +seller.bonus.toFixed(2)
     }));
 
+
     // @TODO: Назначение премий на основе ранжирования
     
 
 
     // @TODO: Подготовка итоговой коллекции с нужными полями
-}
