@@ -24,17 +24,10 @@ function calculateSimpleRevenue(purchase, _product) {
  */
 function calculateBonusByProfit(index, total, seller) {
     // @TODO: Расчет бонуса от позиции в рейтинге
-    if (index === 0) {
-        return 0.15;
-    } else if (index === 1 || index === 2) {
-        return 0.10;
-    } else if (index === total - 2) {
-        return 0;
-    } else if (index === total - 1) {
-        return 0;
-    } else {
-        return 0.05;
-    }
+    if (index === 0) return 0.15;         
+    if (index === 1 || index === 2) return 0.10; 
+    if (index === total - 1) return 0;     
+    return 0.05;                   
 }
 
 /**
@@ -101,7 +94,7 @@ function analyzeSalesData(data, options) {
                 return;
             }
             const quantity = Number(item.quantity) || 1;
-            const cost = (Number(product.purchase_price) || 0) * quantity;
+            const cost = Math.floor(Number(product.purchase_price) * 100) / 100 * quantity;
             totalCost += cost;
 
             
@@ -124,22 +117,19 @@ function analyzeSalesData(data, options) {
     const totalSellers = sortedSellers.length;
 
     sortedSellers.forEach((seller, index) => {
-        const bonusPercentage = options.calculateBonus(index, totalSellers, seller);
-    
-        seller.bonus = parseFloat((bonusPercentage * seller.profit).toFixed(2));
-        
+        const bonusPercentage = calculateBonusByProfit(index, totalSellers);
+
+        seller.bonus = Math.floor(seller.profit * bonusPercentage * 100) / 100;
         seller.top_products = Object.entries(seller.products_sold || {})
-            .map(([sku, quantity]) => {
-                const product = productIndex[sku];
-                return {
-                    sku,
-                    name: product ? product.name : 'Неизвестный товар',
-                    quantity: Number(quantity) || 0
-                };
-            })
+            .map(([sku, quantity]) => ({
+                sku,
+                name: productIndex[sku]?.name || 'Неизвестный товар',
+                quantity: Number(quantity) || 0
+            }))
             .sort((a, b) => b.quantity - a.quantity)
             .slice(0, 10);
     });
+
 
 return sortedSellers.map(seller => ({
     seller_id: seller.seller_id,
@@ -148,7 +138,7 @@ return sortedSellers.map(seller => ({
     profit: Number(seller.profit.toFixed(2)),
     sales_count: seller.sales_count,
     top_products: seller.top_products || [],
-    bonus:(seller.bonus.toFixed(2))
+    bonus:seller.bonus
 }));
 }
 // @TODO: Назначение премий на основе ранжирования
