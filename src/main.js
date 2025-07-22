@@ -5,7 +5,7 @@
  * @param _product карточка товара
  * @returns {number}
  */
-export function calculateSimpleRevenue(purchase, _product) {
+function calculateSimpleRevenue(purchase, _product) {
     // @TODO: Расчет прибыли от операции
     const quantity = purchase.quantity || 1;
     
@@ -25,7 +25,7 @@ export function calculateSimpleRevenue(purchase, _product) {
  * @param seller карточка продавца
  * @returns {number}
  */
-export function calculateBonusByProfit(index, total, seller) {
+function calculateBonusByProfit(index, total, seller) {
     // @TODO: Расчет бонуса от позиции в рейтинге
     if (index === 0) return 0.15;         
     if (index === 1 || index === 2) return 0.10; 
@@ -39,7 +39,7 @@ export function calculateBonusByProfit(index, total, seller) {
  * @param options
  * @returns {{revenue, top_products, bonus, name, sales_count, profit, seller_id}[]}
  */
-export function analyzeSalesData(data, options) {
+function analyzeSalesData(data, options) {
     // @TODO: Проверка входных данных
     if (!data || !Array.isArray(data.sellers) || !Array.isArray(data.products) || !Array.isArray(data.purchase_records)) {
         throw new Error('Некорректные входные данные');
@@ -145,4 +145,9 @@ return sortedSellers.map(seller => ({
 }));
 }
 // @TODO: Назначение премий на основе ранжирования
-// @TODO: Подготовка итоговой коллекции с нужными полями
+// @TODO: Подготовка итоговой коллекции с нужными пол
+module.exports = {
+    calculateSimpleRevenue,
+    calculateBonusByProfit,
+    analyzeSalesData
+};
