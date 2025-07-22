@@ -1,4 +1,3 @@
-
 /**
  * Функция для расчета прибыли
  * @param purchase запись о покупке
@@ -15,8 +14,7 @@ function calculateSimpleRevenue(purchase, _product) {
     
     const discountMultiplier = 1 - (purchase.discount / 100);
     return _product.selling_price * quantity * discountMultiplier;
-    }
-
+}
 
 /**
  * Функция для расчета бонусов
@@ -100,9 +98,8 @@ function analyzeSalesData(data, options) {
             const cost = Math.floor(Number(product.purchase_price) * 100) / 100 * quantity;
             totalCost += cost;
 
-            
             const revenue = options.calculateRevenue(item, product);
-            totalRevenue += revenue;
+            totalRevenue += cost;
             
             sellerStat.products_sold[item.sku] = (sellerStat.products_sold[item.sku] || 0) + quantity;
             
@@ -120,7 +117,7 @@ function analyzeSalesData(data, options) {
     const totalSellers = sortedSellers.length;
 
     sortedSellers.forEach((seller, index) => {
-        const bonusPercentage = calculateBonusByProfit(index, totalSellers);
+        const bonusPercentage = options.calculateBonus(index, totalSellers, seller); // Исправлено: используем options.calculateBonus
 
         seller.bonus = Math.floor(seller.profit * bonusPercentage * 100) / 100;
         seller.top_products = Object.entries(seller.products_sold || {})
@@ -133,21 +130,18 @@ function analyzeSalesData(data, options) {
             .slice(0, 10);
     });
 
-
-return sortedSellers.map(seller => ({
-    seller_id: seller.seller_id,
-    name: seller.name,
-    revenue: Number(seller.revenue.toFixed(2)),
-    profit: Number(seller.profit.toFixed(2)),
-    sales_count: seller.sales_count,
-    top_products: seller.top_products || [],
-    bonus:seller.bonus
-}));
+    return sortedSellers.map(seller => ({
+        seller_id: seller.seller_id,
+        name: seller.name,
+        revenue: Number(seller.revenue.toFixed(2)),
+        profit: Number(seller.profit.toFixed(2)),
+        sales_count: seller.sales_count,
+        top_products: seller.top_products || [],
+        bonus: seller.bonus
+    }));
 }
-// @TODO: Назначение премий на основе ранжирования
-// @TODO: Подготовка итоговой коллекции с нужными пол
-module.exports = {
-    calculateSimpleRevenue,
-    calculateBonusByProfit,
-    analyzeSalesData
+export default {
+  calculateSimpleRevenue,
+  calculateBonusByProfit,
+  analyzeSalesData
 };
