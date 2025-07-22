@@ -5,14 +5,17 @@
  * @param _product карточка товара
  * @returns {number}
  */
-function calculateSimpleRevenue(purchase, _product) {
+export function calculateSimpleRevenue(purchase, _product) {
     // @TODO: Расчет прибыли от операции
+    const quantity = purchase.quantity || 1;
+    
     if (!purchase.discount) {
-        return _product.selling_price * (purchase.quantity || 1);
+        return _product.selling_price * quantity;
     }
-    const discount = 1 - (purchase.discount / 100);
-    return _product.selling_price * (purchase.quantity || 1) * discount;
-}
+    
+    const discountMultiplier = 1 - (purchase.discount / 100);
+    return _product.selling_price * quantity * discountMultiplier;
+    }
 
 
 /**
@@ -22,7 +25,7 @@ function calculateSimpleRevenue(purchase, _product) {
  * @param seller карточка продавца
  * @returns {number}
  */
-function calculateBonusByProfit(index, total, seller) {
+export function calculateBonusByProfit(index, total, seller) {
     // @TODO: Расчет бонуса от позиции в рейтинге
     if (index === 0) return 0.15;         
     if (index === 1 || index === 2) return 0.10; 
@@ -36,7 +39,7 @@ function calculateBonusByProfit(index, total, seller) {
  * @param options
  * @returns {{revenue, top_products, bonus, name, sales_count, profit, seller_id}[]}
  */
-function analyzeSalesData(data, options) {
+export function analyzeSalesData(data, options) {
     // @TODO: Проверка входных данных
     if (!data || !Array.isArray(data.sellers) || !Array.isArray(data.products) || !Array.isArray(data.purchase_records)) {
         throw new Error('Некорректные входные данные');
@@ -99,7 +102,7 @@ function analyzeSalesData(data, options) {
 
             
             const revenue = options.calculateRevenue(item, product);
-            totalRevenue += cost;
+            totalRevenue += revenue;
             
             sellerStat.products_sold[item.sku] = (sellerStat.products_sold[item.sku] || 0) + quantity;
             
