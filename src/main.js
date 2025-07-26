@@ -42,12 +42,11 @@ function analyzeSalesData(data, options) {
     if (!data || !Array.isArray(data.sellers) || !Array.isArray(data.products) || !Array.isArray(data.purchase_records)) {
         throw new Error('Некорректные входные данные');
     }
-    // проверку пустых массивов:
     if (data.sellers.length === 0 || data.products.length === 0 || data.purchase_records.length === 0) {
         throw new Error('Массивы данных не должны быть пустыми');
     }
     // @TODO: Проверка наличия опций
-    if (!options || typeof options.calculateRevenue !== 'function' || typeof options.calculateBonus !== 'function') {
+    if (!options || typeof options.calculateRevenue !== 'function' || typeof options.calculateBonus !== 'function')  {
         throw new Error('Опции должны содержать функции calculateRevenue и calculateBonus');
     }
     // @TODO: Подготовка промежуточных данных для сбора статистики
@@ -140,8 +139,3 @@ function analyzeSalesData(data, options) {
         bonus: seller.bonus
     }));
 }
-export default {
-  calculateSimpleRevenue,
-  calculateBonusByProfit,
-  analyzeSalesData
-};
