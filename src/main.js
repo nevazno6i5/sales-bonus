@@ -7,13 +7,12 @@
 function calculateSimpleRevenue(purchase, _product) {
     // @TODO: Расчет прибыли от операции
     const quantity = purchase.quantity || 1;
-    
+    const price = purchase.sale_price; // Основная цена
     if (!purchase.discount) {
-        return _product.selling_price * quantity;
+        return price * quantity; // Выручка без скидки
     }
-    
     const discountMultiplier = 1 - (purchase.discount / 100);
-    return _product.selling_price * quantity * discountMultiplier;
+    return price * quantity * discountMultiplier; // Выручка со скидкой
 }
 
 /**
@@ -73,50 +72,50 @@ function analyzeSalesData(data, options) {
     });
     // @TODO: Расчет выручки и прибыли для каждого продавца
     data.purchase_records.forEach(record => {
-        const seller = sellerIndex[record.seller_id];
-        if (!seller) {
-            console.warn(`Продавец ${record.seller_id} не найден`);
+    const seller = sellerIndex[record.seller_id];
+    if (!seller) {
+        console.warn(`Продавец ${record.seller_id} не найден`);
+        return;
+    }
+    
+    const sellerStat = sellerStats.find(s => s.seller_id === record.seller_id);
+    if (!sellerStat) return;
+
+    sellerStat.revenue += Number(record.total_amount) || 0;
+    sellerStat.sales_count += 1;
+
+    let totalCost = 0;
+   // let totalRevenue = 0;
+    let totalRevenue = Number(record.total_amount) || 0;
+    const totalItemsPrice = record.items.reduce((sum, item) => {
+        const product = productIndex[item.sku];
+        if (!product) return sum;
+        return sum + (product.price * (Number(item.quantity) || 1));
+    }, 0);
+
+    record.items.forEach(item => {
+        const product = productIndex[item.sku];
+        if (!item.sku || typeof item.quantity === 'undefined') {
+            console.warn(`Товар с SKU ${item.sku} не найден, пропускаем`);
             return;
         }
-        const sellerStat = sellerStats.find(s => s.seller_id === record.seller_id);
-        if (!sellerStat) return;
 
-        sellerStat.sales_count += 1;
-        sellerStat.revenue += Number(record.total_amount) || 0;
-
-        let totalCost = 0;
-        let totalRevenue = 0;
-
-        record.items.forEach(item => {
-            const product = productIndex[item.sku];
-            if (!item.sku || typeof item.quantity === 'undefined') {
-                console.warn(`Товар с SKU ${item.sku} не найден, пропускаем`);
-                return;
-            }
-            const quantity = Number(item.quantity) || 1;
-            const cost = Math.floor(Number(product.purchase_price) * 100) / 100 * quantity;
-            totalCost += cost;
-
-            const revenue = options.calculateRevenue(item, product);
-            totalRevenue += cost;
-            
-            sellerStat.products_sold[item.sku] = (sellerStat.products_sold[item.sku] || 0) + quantity;
-            
-            sellerStat.profit += (totalRevenue - totalCost);
-            
-            if (!sellerStat.products_sold[item.sku]) {
-                sellerStat.products_sold[item.sku] = 0;
-            }
-            sellerStat.products_sold[item.sku] += quantity;
-        });
-        sellerStat.profit += (Number(record.total_amount) || 0) - totalCost;
+        const quantity = Number(item.quantity) || 1;
+        const cost = Number(product.purchase_price) * quantity;
+        totalCost += cost;
+        
+        const itemPrice = product.price * quantity;
+        const revenue = options.calculateRevenue(item)
+        const profit = revenue - cost;
+        sellerStat.profit += profit;
     });
+    })
     // @TODO: Сортировка продавцов по прибыли
     const sortedSellers = [...sellerStats].sort((a, b) => b.profit - a.profit);
     const totalSellers = sortedSellers.length;
 
     sortedSellers.forEach((seller, index) => {
-        const bonusPercentage = options.calculateBonus(index, totalSellers, seller); // Исправлено: используем options.calculateBonus
+        const bonusPercentage = options.calculateBonus(index, totalSellers, seller); 
 
         seller.bonus = Math.floor(seller.profit * bonusPercentage * 100) / 100;
         seller.top_products = Object.entries(seller.products_sold || {})
