@@ -24,10 +24,15 @@ function calculateSimpleRevenue(purchase, _product) {
  */
 function calculateBonusByProfit(index, total, seller) {
     // @TODO: Расчет бонуса от позиции в рейтинге
-    if (index === 0) return 0.15;         
-    if (index === 1 || index === 2) return 0.10; 
-    if (index === total - 1) return 0;     
-    return 0.05;                   
+    if (index === 0) { 
+        return seller.profit * 0.15;
+    } else if (index === 1 || index === 2) { 
+        return seller.profit * 0.10; 
+    } else if (index === total - 1) { 
+        return seller.profit *  0; 
+    } else { 
+        return seller.profit * 0.05; 
+    }
 }
 
 /**
@@ -86,12 +91,12 @@ function analyzeSalesData(data, options) {
 
     let totalCost = 0;
    // let totalRevenue = 0;
-    let totalRevenue = Number(record.total_amount) || 0;
-    const totalItemsPrice = record.items.reduce((sum, item) => {
-        const product = productIndex[item.sku];
-        if (!product) return sum;
-        return sum + (product.price * (Number(item.quantity) || 1));
-    }, 0);
+   // let totalRevenue = Number(record.total_amount) || 0;
+  //  const totalItemsPrice = record.items.reduce((sum, item) => {
+   //     const product = productIndex[item.sku];
+   //     if (!product) return sum;
+   //     return sum + (product.price * (Number(item.quantity) || 1));
+   // }, 0);
 
     record.items.forEach(item => {
         const product = productIndex[item.sku];
@@ -117,7 +122,7 @@ function analyzeSalesData(data, options) {
     sortedSellers.forEach((seller, index) => {
         const bonusPercentage = options.calculateBonus(index, totalSellers, seller); 
 
-        seller.bonus = Math.floor(seller.profit * bonusPercentage * 100) / 100;
+        seller.bonus = Math.floor( bonusPercentage * 100) / 100;
         seller.top_products = Object.entries(seller.products_sold || {})
             .map(([sku, quantity]) => ({
                 sku,
