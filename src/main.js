@@ -86,17 +86,16 @@ function analyzeSalesData(data, options) {
     const sellerStat = sellerStats.find(s => s.seller_id === record.seller_id);
     if (!sellerStat) return;
 
-    sellerStat.revenue += Number(record.total_amount) || 0;
+    sellerStat.revenue += record.total_amount;
     sellerStat.sales_count += 1;
 
     let totalCost = 0;
-   // let totalRevenue = 0;
-   // let totalRevenue = Number(record.total_amount) || 0;
-  //  const totalItemsPrice = record.items.reduce((sum, item) => {
-   //     const product = productIndex[item.sku];
-   //     if (!product) return sum;
-   //     return sum + (product.price * (Number(item.quantity) || 1));
-   // }, 0);
+    let totalRevenue = Number(record.total_amount) || 0;
+    const totalItemsPrice = record.items.reduce((sum, item) => {
+        const product = productIndex[item.sku];
+        if (!product) return sum;
+        return sum + (product.price * (Number(item.quantity) || 1));
+    }, 0);
 
     record.items.forEach(item => {
         const product = productIndex[item.sku];
