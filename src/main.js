@@ -124,9 +124,8 @@ function analyzeSalesData(data, options) {
     const totalSellers = sortedSellers.length;
 
     sortedSellers.forEach((seller, index) => {
-        const bonusPercentage = options.calculateBonus(index, totalSellers, seller); 
 
-        seller.bonus = Math.floor( bonusPercentage * 100) / 100;
+        seller.bonus = options.calculateBonus(index, totalSellers, seller); 
         seller.top_products = Object.entries(seller.products_sold || {})
             .map(([sku, quantity]) => ({
                 sku,
@@ -143,6 +142,6 @@ function analyzeSalesData(data, options) {
         profit: Number(seller.profit.toFixed(2)),
         sales_count: seller.sales_count,
         top_products: seller.top_products || [],
-        bonus: seller.bonus
+        bonus: Number(seller.bonus.toFixed(2))
     }));
 }
