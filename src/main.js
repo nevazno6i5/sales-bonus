@@ -86,16 +86,16 @@ function analyzeSalesData(data, options) {
     const sellerStat = sellerStats.find(s => s.seller_id === record.seller_id);
     if (!sellerStat) return;
 
-   // sellerStat.revenue += Number(record.total_amount) || 0;
+    sellerStat.revenue += Number(record.total_amount) || 0;
     sellerStat.sales_count += 1;
 
-    //let totalCost = 0;
-    //let totalRevenue = Number(record.total_amount) || 0;
-    //const totalItemsPrice = record.items.reduce((sum, item) => {
-     //   const product = productIndex[item.sku];
-    //    if (!product) return sum;
-    //    return sum + (product.price * (Number(item.quantity) || 1));
-   // }, 0);
+    let totalCost = 0;
+    let totalRevenue = Number(record.total_amount) || 0;
+    const totalItemsPrice = record.items.reduce((sum, item) => {
+        const product = productIndex[item.sku];
+        if (!product) return sum;
+        return sum + (product.price * (Number(item.quantity) || 1));
+    }, 0);
 
     record.items.forEach(item => {
         const product = productIndex[item.sku];
@@ -105,21 +105,18 @@ function analyzeSalesData(data, options) {
         }
 
         const quantity = Number(item.quantity) || 1;
-        
-        //const itemPrice = product.price * quantity;
-        const revenue = options.calculateRevenue(item);
         const cost = Number(product.purchase_price) * quantity;
-       // totalCost += cost;
-       sellerStat.revenue +=revenue;
+        totalCost += cost;
+        
+        const itemPrice = product.price * quantity;
+        const revenue = options.calculateRevenue(item)
         const profit = revenue - cost;
         sellerStat.profit += profit;
 
-        const sku = item.sku;
-        if (sellerStat.products_sold[sku]) {
-            sellerStat.products_sold[sku] += quantity;
-        } else {
-            sellerStat.products_sold[sku] = quantity;
+        if (!sellerStat.products_sold[item.sku]) {
+            sellerStat.products_sold[item.sku] = 0;
         }
+        sellerStat.products_sold[item.sku] += Number(item.quantity) || 1;
     });
     })
     // @TODO: Сортировка продавцов по прибыли
