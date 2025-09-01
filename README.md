@@ -1,1 +1,1 @@
-git@github.com/nevazno6i5/sales-bonus
+https://github.com/nevazno6i5/sales-bonus
